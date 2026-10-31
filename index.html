@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI-Powered Health Risk Prediction System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#04222b;--bg2:#0a3440;--fg:#e9fbf7;--mut:#8fb8b5;--line:rgba(233,251,247,.18);--ok:#5cf2a8;--mid:#ffd166;--hi:#ff5d7a;
+--d:'Syne','Arial Black',sans-serif;--b:'Manrope',Arial,sans-serif;color-scheme:dark;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#e8f6f3;--bg2:#d3ece7;--fg:#04222b;--mut:#3b6866;--line:rgba(4,34,43,.2);--ok:#0a8a5a;--mid:#b07800;--hi:#d6264a;color-scheme:light}}
+:root[data-theme="light"]{--bg:#e8f6f3;--bg2:#d3ece7;--fg:#04222b;--mut:#3b6866;--line:rgba(4,34,43,.2);--ok:#0a8a5a;--mid:#b07800;--hi:#d6264a;color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark}
+html{scroll-behavior:smooth;scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 1.05rem/1.6 var(--b);overflow-x:hidden}
+canvas#gl{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+main,header,footer{position:relative;z-index:1}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--mid);outline-offset:3px}
+h1,h2,h3{font-family:var(--d);font-weight:800;line-height:.95;margin:0;letter-spacing:-.02em}
+h1{font-size:clamp(2.6rem,8.2vw,8rem)}
+h2{font-size:clamp(2.2rem,6vw,5rem);margin-bottom:1.2rem}
+h3{font-size:1.5rem;line-height:1.1}
+p{max-width:62ch;margin:.6rem 0}
+.wrap{padding:0 clamp(1.2rem,5vw,4.5rem)}
+section{min-height:100vh;padding:7rem 0 5rem;display:flex;flex-direction:column;justify-content:center}
+nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:calc(1rem + env(safe-area-inset-top,0px)) clamp(1.2rem,5vw,4.5rem) 1rem;background:linear-gradient(var(--bg),transparent)}
+nav b{font:800 1.1rem var(--d)}nav div{display:flex;gap:1.4rem;font-size:.95rem}nav a{text-decoration:none;color:var(--mut)}nav a:hover{color:var(--fg)}
+@media(max-width:620px){nav div a:nth-child(n+3){display:none}}
+/* preloader */
+#pre{position:fixed;inset:0;z-index:99;background:var(--hi);color:#10163a;display:grid;place-items:center;transition:transform .9s cubic-bezier(.76,0,.24,1)}
+#pre.done{transform:translateY(-100%)}
+#pre .n{font:800 clamp(6rem,24vw,18rem)/1 var(--d)}#pre .n small{font-size:.35em}
+#pre svg{position:absolute;left:0;right:0;bottom:12%;width:100%;height:80px}
+.ecg{fill:none;stroke:currentColor;stroke-width:3;stroke-dasharray:1;stroke-dashoffset:1;animation:ecg 1.6s linear infinite}
+@keyframes ecg{to{stroke-dashoffset:-1}}
+/* hero */
+.hero{min-height:100svh}
+.hero h1 span{display:block;transform:translateY(110%);transition:transform 1s cubic-bezier(.2,.8,.2,1)}
+.hero .l{overflow:hidden;padding-bottom:.08em}
+body.go .hero .l span{transform:none}body.go .hero .l:nth-child(2) span{transition-delay:.12s}body.go .hero .l:nth-child(3) span{transition-delay:.24s}
+.hero p{font-size:1.2rem;color:var(--mut);margin-top:1.6rem}
+.cta{display:inline-block;margin-top:1.6rem;padding:1rem 1.8rem;border-radius:99px;background:var(--fg);color:var(--bg);font-weight:600;text-decoration:none;transition:transform .2s}
+.cta:hover{transform:scale(1.05)}
+.hero svg{width:min(420px,80%);height:50px;margin-top:2rem;color:var(--hi)}
+.hero .ecg{stroke-width:2.5}
+/* ticker */
+.tick{overflow:hidden;white-space:nowrap;background:var(--hi);color:#10163a;font:800 clamp(1.6rem,4vw,3rem) var(--d);padding:.6rem 0;transform:rotate(-1.2deg);margin:0 -2vw;position:relative;z-index:2}
+.tick div{display:inline-block;animation:mq 28s linear infinite}
+@keyframes mq{to{transform:translateX(-50%)}}
+/* problem */
+.cmp{display:grid;grid-template-columns:1fr 1fr;border-top:2px solid var(--fg);margin-top:2rem;max-width:980px;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(6px)}
+.cmp>div{padding:1rem 1.2rem;border-bottom:1px solid var(--line)}
+.cmp .h{font:800 1.3rem var(--d)}.cmp .h.a{color:var(--hi)}.cmp .h.b{color:var(--ok)}
+.cmp .k{color:var(--mut);grid-column:1/-1;padding-bottom:0;border:0;font-size:.9rem}
+/* demo */
+.demo{display:grid;grid-template-columns:minmax(320px,540px) 1fr;gap:3rem;align-items:center}
+@media(max-width:860px){.demo{grid-template-columns:1fr}}
+.panel{background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:22px;padding:1.6rem}
+.row{margin:1.1rem 0}.row label{display:flex;justify-content:space-between;font-weight:600}.row output{font-variant-numeric:tabular-nums;color:var(--mid)}
+input[type=range]{width:100%;accent-color:var(--hi);height:28px}
+.res{justify-self:end;text-align:right;max-width:30rem}
+@media(max-width:860px){.res{justify-self:start;text-align:left}}
+.pct{font:800 clamp(5rem,16vw,12rem)/.9 var(--d);transition:color .3s}
+.lvl{font:800 2rem var(--d)}
+.exp{margin-top:1.4rem;text-align:left;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(10px);border-radius:18px;padding:1.2rem;border:1px solid var(--line)}
+.ex{display:grid;grid-template-columns:5.5rem 1fr;gap:.8rem;align-items:center;font-size:.9rem;margin:.5rem 0}
+.bar{position:relative;height:12px;background:var(--line);border-radius:6px}.bar::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--fg)}
+.bar i{position:absolute;top:0;bottom:0;border-radius:6px;transition:all .3s}
+small.note{color:var(--mut);display:block;margin-top:.8rem;font-size:.85rem}
+/* pipeline */
+.rail{display:flex;gap:0;overflow-x:auto;cursor:grab;scrollbar-width:none;padding:1rem 0 2rem;scroll-snap-type:x proximity;margin:0 calc(-1 * clamp(1.2rem,5vw,4.5rem));padding-left:clamp(1.2rem,5vw,4.5rem)}
+.rail::-webkit-scrollbar{display:none}.rail.drag{cursor:grabbing;scroll-snap-type:none}
+.st{flex:0 0 min(78vw,330px);scroll-snap-align:start;padding:1.6rem 1.6rem 2rem;border-left:2px solid var(--line);background:linear-gradient(180deg,var(--bg2),transparent)}
+.st:nth-child(even){margin-top:3rem}
+.st .no{font:800 4.5rem/1 var(--d);color:var(--hi)}
+.st p{color:var(--mut);font-size:.95rem}
+.hint{color:var(--mut);font-size:.9rem}
+/* models */
+.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:2rem}
+@media(max-width:860px){.mods{grid-template-columns:1fr}}
+.mod{border-top:3px solid var(--line);padding-top:1rem}.mod.sel{border-color:var(--ok)}
+.mod .tag{display:inline-block;background:var(--ok);color:#10163a;font-weight:600;font-size:.8rem;padding:.15rem .7rem;border-radius:99px;margin-bottom:.5rem}
+.mod p{color:var(--mut)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2.4rem 3rem;margin-top:2.5rem}
+.facts h3{color:var(--ok);margin-bottom:.4rem}.facts p{color:var(--mut);margin:0;font-size:.97rem}
+.thr{display:flex;height:46px;border-radius:12px;overflow:hidden;font-weight:600;max-width:760px;margin-top:1rem;color:#10163a}
+.thr div{display:flex;align-items:center;padding-left:1rem;white-space:nowrap}
+.road{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1.4rem}.road span{border:1px solid var(--fg);border-radius:99px;padding:.45rem 1.1rem}
+footer{padding:5rem 0 3rem;border-top:1px solid var(--line);background:var(--bg)}
+.team{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.4rem;margin:2rem 0}
+.team b{font:800 1.4rem var(--d);display:block}.team span,footer small{color:var(--mut)}
+#prog{position:fixed;top:0;left:0;right:0;height:3px;background:var(--hi);transform:scaleX(0);transform-origin:left;z-index:30}
+#glow{position:fixed;top:0;left:0;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--hi) 22%,transparent),transparent 65%);pointer-events:none;z-index:0}
+@media(hover:none){#glow{display:none}}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1.5rem;padding-top:5rem;padding-bottom:2rem;position:relative;z-index:1}
+.stats b{font:800 clamp(3.5rem,9vw,7rem)/1 var(--d);display:block;color:var(--ok)}.stats span{color:var(--mut)}
+.st{transition:transform .2s}.cta{will-change:transform}
+.panel.f{padding:1.2rem}.panel button{font:inherit}
+.pre,.seg,.life{display:flex;gap:.5rem;flex-wrap:wrap}.pre{margin-bottom:1rem}.life{margin-top:.8rem}
+.pre button,.seg button,.chip{background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:99px;padding:.4rem 1rem;cursor:pointer;transition:background .2s,color .2s}
+.pre button:hover{border-color:var(--fg)}
+.seg button[aria-pressed=true],.chip[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+#fields{display:grid;grid-template-columns:1fr 1fr;gap:0 1.4rem}@media(max-width:520px){#fields{grid-template-columns:1fr}}
+.fld{margin:.8rem 0}.fh{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem;font-weight:600;font-size:.92rem}
+.num{display:flex;align-items:center;gap:.3rem}.num em{color:var(--mut);font-style:normal;font-size:.75rem;min-width:2.3rem}
+.num button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer}.num button:hover{background:var(--fg);color:var(--bg)}
+.num input{width:4.4rem;text-align:center;background:var(--bg2);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:.35rem;font:600 1rem var(--b);-moz-appearance:textfield}
+.num input::-webkit-inner-spin-button{-webkit-appearance:none}.num input[aria-invalid=true]{border-color:var(--hi)}
+.rg{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:6px;background:var(--line);margin:.7rem 0 .2rem}
+.rg::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--fg);border:4px solid var(--hi);cursor:grab}
+.rg::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--fg);border:4px solid var(--hi);cursor:grab}
+.err{color:var(--hi);font-size:.8rem;min-height:1em}
+.meter{position:relative;height:12px;border-radius:6px;margin:1rem 0 .4rem;background:linear-gradient(90deg,var(--ok) 35%,var(--mid) 35% 65%,var(--hi) 65%)}
+.meter i{position:absolute;top:-6px;width:6px;height:24px;margin-left:-3px;border-radius:3px;background:var(--fg);transition:left .5s cubic-bezier(.2,.8,.2,1)}
+.chipb{color:var(--mut);font-size:.9rem}#tips{margin:.4rem 0 0;padding-left:1.1rem;color:var(--mut);font-size:.92rem}
+@media(max-width:860px){canvas#gl{opacity:.5}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.hero .l span{transform:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div id="pre" aria-hidden="true"><div class="n"><span id="cnt">0</span><small>%</small></div>
+<svg viewBox="0 0 1000 80" preserveAspectRatio="none"><path class="ecg" pathLength="1" d="M0 40H380l15-6 15 6h40l12-34 16 68 14-34h60l15-10 15 10H1000"/></svg></div>
+
+<div id="prog"></div><nav><b>Health Risk AI</b><div><a href="#problem">Why</a><a href="#demo">Live demo</a><a href="#pipeline">Pipeline</a><a href="#models">Models</a><a href="#about">About</a></div></nav>
+<canvas id="gl" aria-hidden="true"></canvas><div id="glow" aria-hidden="true"></div>
+
+<main>
+<header>
+<section class="hero wrap" data-x="1.35" data-s="1">
+<h1 aria-label="Know your risk before your body tells you.">
+<div class="l"><span>Know your</span></div><div class="l"><span>risk before</span></div><div class="l"><span>symptoms.</span></div></h1>
+<p>An AI-powered web app that estimates your risk of diabetes, hypertension and heart disease from a few everyday health readings, then shows exactly which readings drove the result.</p>
+<svg viewBox="0 0 420 50"><path class="ecg" pathLength="1" d="M0 25H120l8-4 8 4h20l7-22 9 44 8-22h30l8-6 8 6H420"/></svg>
+<div><a class="cta" href="#demo">Try the live demo</a></div>
+</section>
+</header>
+
+<div class="tick" aria-hidden="true"><div>Predict early &nbsp;•&nbsp; Explain every result &nbsp;•&nbsp; Prevent, don’t just treat &nbsp;•&nbsp; SDG 3: Good Health &amp; Well-Being &nbsp;•&nbsp; Predict early &nbsp;•&nbsp; Explain every result &nbsp;•&nbsp; Prevent, don’t just treat &nbsp;•&nbsp; SDG 3: Good Health &amp; Well-Being &nbsp;•&nbsp;</div></div>
+
+<div class="stats wrap"><div><b data-n="4">4</b><span>health inputs</span></div><div><b data-n="3">3</b><span>models compared</span></div><div><b data-n="6">6</b><span>pipeline stages</span></div><div><b data-n="7">7</b><span>of 7 tests passed</span></div></div>
+
+<section id="problem" class="wrap" data-x="-1.3" data-s=".9">
+<h2>Healthcare waits<br>for symptoms.<br>We don’t.</h2>
+<p>Chronic diseases build quietly for years. Most people find out after complications start, when treatment costs more and outcomes are worse. This system moves the first warning earlier.</p>
+<div class="cmp">
+<div class="h a">Traditional care</div><div class="h b">This system</div>
+<div class="k">Nature</div><div>Reactive, after symptoms</div><div>Preventive, before symptoms</div>
+<div class="k">Speed</div><div>Appointment and lab tests</div><div>Instant result in the browser</div>
+<div class="k">Explanation</div><div>Depends on the doctor</div><div>Automatic SHAP and LIME</div>
+<div class="k">Access</div><div>Limited by location and cost</div><div>Anyone with internet</div>
+<div class="k">Records</div><div>Often on paper</div><div>Stored digitally in MySQL</div>
+</div>
+</section>
+
+<section id="demo" class="wrap" data-x="1.2" data-s="1.05">
+<h2>Enter your readings.<br>Watch the core react.</h2>
+<div class="demo">
+<div class='panel f' id='form'>
+<div class='pre'><button type='button' data-p='0'>Healthy example</button><button type='button' data-p='1'>Borderline example</button><button type='button' data-p='2'>High-risk example</button></div>
+<div class='seg' role='group' aria-label='Sex'><button type='button' data-sx='1'>Male</button><button type='button' data-sx='0'>Female</button></div>
+<div id='fields'></div>
+<div class='life'><button type='button' class='chip' data-t='smoke'>Smoker</button><button type='button' class='chip' data-t='active'>Active 150+ min/week</button><button type='button' class='chip' data-t='fam'>Family history</button></div>
+</div>
+<div class="res">
+<div class="pct" id="pct">19%</div><div class="lvl" id="lvl">Low risk</div>
+<p id="msg">Maintain a healthy lifestyle and go for regular check-ups.</p>
+<div class='meter' aria-hidden='true'><i id='mk' style='left:19%'></i></div><div id='bmic' class='chipb'></div>
+<div class="exp"><b>Why this result</b><div id="ex"></div><b style='display:block;margin-top:1rem'>What may help</b><ul id='tips'></ul></div>
+<small class="note">Interactive illustration using a simple weighted formula and the report’s risk bands. It is not the trained model and not medical advice.</small>
+</div></div>
+</section>
+
+<section id="pipeline" class="wrap" data-x="-1.2" data-s=".85">
+<h2>From raw readings<br>to a reason.</h2>
+<p class="hint">Drag to explore the six stages.</p>
+<div class="rail" id="rail">
+<div class="st"><div class="no">1</div><h3>Data acquisition</h3><p>Medical records, lab results and wearable-device readings are collected.</p></div>
+<div class="st"><div class="no">2</div><h3>Preprocessing</h3><p>Missing or impossible values become the feature median. Categories are encoded and numbers standardised.</p></div>
+<div class="st"><div class="no">3</div><h3>Feature engineering</h3><p>The most relevant medical features are selected and extracted to lift accuracy and cut computation.</p></div>
+<div class="st"><div class="no">4</div><h3>Model development</h3><p>Three models are tuned with grid search and cross-validation, then the best is saved with joblib.</p></div>
+<div class="st"><div class="no">5</div><h3>Risk prediction</h3><p>Flask validates inputs, applies the saved scaler and returns a probability and a risk level.</p></div>
+<div class="st"><div class="no">6</div><h3>Interpretation</h3><p>SHAP shows which factors pushed the score up or down, so people see reasons, not only a label.</p></div>
+</div>
+</section>
+
+<section id="models" class="wrap" data-x="1.3" data-s=".9">
+<h2>Three models.<br>One chosen.</h2>
+<div class="mods">
+<div class="mod"><h3>Logistic Regression</h3><p>A transparent baseline. Slightly less accurate, but easy to reason about.</p></div>
+<div class="mod sel"><span class="tag">Selected</span><h3>Random Forest</h3><p>Best accuracy. Captures non-linear links between BMI, age and glucose, and resists noise and over-fitting.</p></div>
+<div class="mod"><h3>Support Vector Machine</h3><p>Performs well after scaling, but is more sensitive to parameter choices.</p></div>
+</div>
+<p style="margin-top:2rem">Each model is judged on accuracy, precision, recall and F1-score. In healthcare, recall on the high-risk class matters most: a missed case could delay a doctor’s visit.</p>
+<h3 style="margin-top:2.4rem;font-size:1.3rem">How probability becomes a risk level</h3>
+<div class="thr"><div style="flex:35;background:var(--ok)">Low &lt; 0.35</div><div style="flex:30;background:var(--mid)">Moderate 0.35–0.65</div><div style="flex:35;background:var(--hi)">High &gt; 0.65</div></div>
+<div class="facts">
+<div><h3>Explainable</h3><p>SHAP bars sit beside every result, with LIME as a second opinion.</p></div>
+<div><h3>Validated inputs</h3><p>Every field is range-checked, for example age 1 to 120, before it reaches the model.</p></div>
+<div><h3>Tested</h3><p>All 7 functional test cases pass, from valid input and empty fields to saving a record and viewing history.</p></div>
+<div><h3>Private by design</h3><p>Inputs and predictions are stored in MySQL with encryption in mind for health-data standards.</p></div>
+</div>
+<h3 style="margin-top:3rem;font-size:1.3rem">What comes next</h3>
+<div class="road"><span>More diseases and indicators</span><span>Mobile app</span><span>Wearable data feeds</span><span>Hospital system integration</span><span>More diverse datasets</span></div>
+</section>
+</main>
+
+<footer id="about" class="wrap">
+<h2 style="font-size:clamp(2rem,5vw,4rem)">Prevention starts<br>with a number.</h2>
+<p>This project supports UN Sustainable Development Goal 3, Good Health and Well-Being, by making early risk assessment fast, explainable and available to anyone with a browser.</p>
+<small>This system estimates risk only. It does not diagnose and cannot replace a qualified medical professional.</small>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches,$=function(s){return document.querySelector(s)};
+/* preloader */
+var t0=performance.now(),cn=$('#cnt');
+(function f(n){var p=Math.min(1,(n-t0)/(reduce?1:1700));cn.textContent=Math.round(p*100);
+ if(p<1)requestAnimationFrame(f);else{$('#pre').classList.add('done');document.body.classList.add('go')}})(t0);
+/* risk model (illustrative) */
+var vel=0,norm=[.4,.3,.3,.15],risk=.19,target=.19,C={ok:new THREE.Color(),mid:new THREE.Color(),hi:new THREE.Color()};
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function colors(){C.ok.set(css('--ok'));C.mid.set(css('--mid'));C.hi.set(css('--hi'))}
+var F=[{k:'age',l:'Age',u:'yrs',min:1,max:120,step:1,v:45},{k:'hr',l:'Resting pulse',u:'bpm',min:40,max:180,step:1,v:72,z:[[60,'--mid'],[100,'--ok'],[180,'--mid']]},{k:'h',l:'Height',u:'cm',min:100,max:220,step:1,v:170},{k:'w',l:'Weight',u:'kg',min:30,max:200,step:1,v:72},{k:'bp',l:'Systolic BP',u:'mmHg',min:80,max:220,step:1,v:120,z:[[120,'--ok'],[140,'--mid'],[220,'--hi']]},{k:'glu',l:'Glucose',u:'mg/dL',min:50,max:400,step:1,v:100,z:[[100,'--ok'],[126,'--mid'],[400,'--hi']]}];
+var V={},S={m:1,smoke:0,active:1,fam:0},PR=[{age:30,hr:64,h:168,w:62,bp:112,glu:88,m:0,smoke:0,active:1,fam:0},{age:48,hr:74,h:170,w:78,bp:130,glu:108,m:1,smoke:0,active:0,fam:0},{age:61,hr:84,h:168,w:94,bp:152,glu:185,m:1,smoke:1,active:0,fam:1}];
+var T={'Glucose':'Cut sugary drinks and ask about a fasting glucose test.','BMI':'Small, steady weight loss through food and movement lowers risk.','Blood pressure':'Cut back on salt and measure at rest on several days.','Smoking':'Quitting lowers heart risk within weeks.','Family history':'Tell your doctor so screening can start earlier.','Resting pulse':'Regular cardio brings resting pulse down.','Inactive':'Aim for about 150 minutes of moderate activity a week.'};
+function cl(x){return Math.max(0,Math.min(1,x))}
+function fld(k){return F.filter(function(f){return f.k===k})[0]}
+function build(){$('#fields').innerHTML=F.map(function(f){V[f.k]=f.v;var g='';
+ if(f.z){var pr=f.min,s=[];f.z.forEach(function(z){s.push('var('+z[1]+') '+(pr-f.min)/(f.max-f.min)*100+'% '+(z[0]-f.min)/(f.max-f.min)*100+'%');pr=z[0]});g='background:linear-gradient(90deg,'+s.join(',')+')'}
+ return `<div class='fld'><div class='fh'><label for='n_${f.k}'>${f.l}</label><div class='num'><button type='button' data-k='${f.k}' data-d='-1' aria-label='Decrease ${f.l}'>−</button><input id='n_${f.k}' type='number' inputmode='decimal' min='${f.min}' max='${f.max}' step='${f.step}' value='${f.v}'><button type='button' data-k='${f.k}' data-d='1' aria-label='Increase ${f.l}'>+</button><em>${f.u}</em></div></div><input class='rg' id='r_${f.k}' type='range' min='${f.min}' max='${f.max}' step='${f.step}' value='${f.v}' aria-label='${f.l} slider' style='${g}'><div class='err' id='e_${f.k}' role='alert'></div></div>`}).join('')}
+function clr(k){$('#n_'+k).removeAttribute('aria-invalid');$('#e_'+k).textContent=''}
+function paint(){F.forEach(function(f){$('#n_'+f.k).value=V[f.k];$('#r_'+f.k).value=V[f.k];clr(f.k)});
+ document.querySelectorAll('[data-t]').forEach(function(b){b.setAttribute('aria-pressed',S[b.dataset.t]?'true':'false')});
+ document.querySelectorAll('[data-sx]').forEach(function(b){b.setAttribute('aria-pressed',+b.dataset.sx===S.m?'true':'false')});calc2()}
+function setK(k,x){var f=fld(k);V[k]=Math.max(f.min,Math.min(f.max,x));$('#n_'+k).value=V[k];$('#r_'+k).value=V[k];clr(k);calc2()}
+function initForm(){build();var fm=$('#form');
+ fm.addEventListener('input',function(e){var t=e.target,k=t.id.slice(2),f=fld(k);if(!f)return;var x=parseFloat(t.value);
+  if(t.id[0]==='r'){setK(k,x);return}
+  var bad=isNaN(x)||x<f.min||x>f.max;t.setAttribute('aria-invalid',bad);$('#e_'+k).textContent=bad?'Enter a value from '+f.min+' to '+f.max+' '+f.u:'';
+  if(!bad){V[k]=x;$('#r_'+k).value=x;calc2()}});
+ fm.addEventListener('change',function(e){var t=e.target;if(t.id&&t.id[0]==='n'){var k=t.id.slice(2),x=parseFloat(t.value);setK(k,isNaN(x)?V[k]:x)}});
+ fm.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var d=b.dataset;
+  if(d.d)setK(d.k,V[d.k]+ +d.d*fld(d.k).step);
+  else if(d.t){S[d.t]=S[d.t]?0:1;paint()}
+  else if(d.sx){S.m=+d.sx;paint()}
+  else if(d.p!==undefined){var p=PR[+d.p];F.forEach(function(f){V[f.k]=p[f.k]});['m','smoke','active','fam'].forEach(function(q){S[q]=p[q]});paint()}});
+ paint()}
+function calc2(){
+ var bmi=V.w/Math.pow(V.h/100,2),
+ c=[['Age',.03*(V.age-40)],['BMI',.09*(bmi-22)],['Blood pressure',.025*(V.bp-110)],['Glucose',.03*(V.glu-90)],['Resting pulse',.02*(V.hr-70)],['Sex (male)',S.m?.15:0],['Smoking',S.smoke?.55:0],['Physical activity',S.active?-.3:0],['Family history',S.fam?.45:0]],
+ z=-2.4+c.reduce(function(a,b){return a+b[1]},0),p=1/(1+Math.exp(-z));target=p;
+ norm=[cl((V.age-18)/72),cl((bmi-15)/30),cl((V.bp-90)/110),cl((V.glu-60)/240)];
+ var lv=p<.35?['Low risk','Maintain a healthy lifestyle and go for regular check-ups.','--ok']:p<=.65?['Moderate risk','Improve diet and exercise, and consider consulting a doctor.','--mid']:['High risk','Consult a healthcare professional as soon as possible.','--hi'];
+ $('#pct').textContent=Math.round(p*100)+'%';$('#pct').style.color='var('+lv[2]+')';$('#lvl').textContent=lv[0];$('#msg').textContent=lv[1];
+ $('#mk').style.left=p*100+'%';
+ $('#bmic').textContent='BMI '+bmi.toFixed(1)+': '+(bmi<18.5?'underweight':bmi<25?'healthy range':bmi<30?'overweight':'obesity range');
+ var s=c.filter(function(x){return Math.abs(x[1])>.01}).sort(function(a,b){return Math.abs(b[1])-Math.abs(a[1])}).slice(0,6),mx=Math.max(1,Math.abs(s[0]?s[0][1]:1));
+ $('#ex').innerHTML=s.map(function(x){var w=Math.min(50,Math.abs(x[1])/mx*50),pos=x[1]>=0;return '<div class="ex"><span>'+x[0]+'</span><div class="bar"><i style="width:'+w+'%;left:'+(pos?50:50-w)+'%;background:var('+(pos?'--hi':'--ok')+')"></i></div></div>'}).join('');
+ var tp=c.filter(function(x){return x[1]>.15}).sort(function(a,b){return b[1]-a[1]}).slice(0,2).map(function(x){return T[x[0]]}).filter(Boolean);
+ if(!S.active)tp.push(T.Inactive);
+ $('#tips').innerHTML=(tp.length?tp:['Keep up your current habits and recheck once a year.']).slice(0,3).map(function(x){return '<li>'+x+'</li>'}).join('');
+}
+function calcOld(){
+ var v={};ids.forEach(function(i){v[i]=+$('#'+i).value;$('#'+out[i]).textContent=v[i]});
+ var c=[['Age',.03*(v.age-40)],['BMI',.09*(v.bmi-22)],['Blood pressure',.025*(v.bp-110)],['Glucose',.03*(v.glu-90)]];
+ norm=[(v.age-18)/72,(v.bmi-15)/30,(v.bp-90)/110,(v.glu-60)/240];var z=-2.4+c.reduce(function(a,b){return a+b[1]},0),p=1/(1+Math.exp(-z));target=p;
+ var lv=p<.35?['Low risk','Maintain a healthy lifestyle and go for regular check-ups.','--ok']:p<=.65?['Moderate risk','Improve diet and exercise, and consider consulting a doctor.','--mid']:['High risk','Consult a healthcare professional as soon as possible.','--hi'];
+ $('#pct').textContent=Math.round(p*100)+'%';$('#pct').style.color='var('+lv[2]+')';
+ $('#lvl').textContent=lv[0];$('#msg').textContent=lv[1];
+ var mx=Math.max(1.2,Math.max.apply(null,c.map(function(x){return Math.abs(x[1])})));
+ $('#ex').innerHTML=c.map(function(x){var w=Math.min(50,Math.abs(x[1])/mx*50),pos=x[1]>=0;
+  return '<div class="ex"><span>'+x[0]+'</span><div class="bar"><i style="width:'+w+'%;left:'+(pos?50:50-w)+'%;background:var('+(pos?'--hi':'--ok')+')"></i></div></div>'}).join('');
+}
+initForm();
+/* draggable rail */
+var rail=$('#rail'),down=false,sx=0,sl=0;
+rail.addEventListener('pointerdown',function(e){down=true;sx=e.clientX;sl=rail.scrollLeft;rail.classList.add('drag')});
+addEventListener('pointerup',function(){down=false;rail.classList.remove('drag')});
+addEventListener('pointermove',function(e){if(down)rail.scrollLeft=sl-(e.clientX-sx)});
+/* 3D core */
+var cv=$('#gl'),R;
+try{R=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true})}catch(e){cv.style.display='none';return}
+var sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(45,1,.1,50);cam.position.z=5;
+var g=new THREE.Group();sc.add(g);colors();
+var N=3200,base=new Float32Array(N*3),pos=new Float32Array(N*3);
+for(var i=0;i<N;i++){var y=1-2*(i+.5)/N,r=Math.sqrt(1-y*y),a=i*2.399963;base[i*3]=Math.cos(a)*r;base[i*3+1]=y;base[i*3+2]=Math.sin(a)*r}
+var geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+var mat=new THREE.PointsMaterial({size:.026,transparent:true,opacity:.95,depthWrite:false});
+var pts=new THREE.Points(geo,mat);g.add(pts);
+var inner=new THREE.Mesh(new THREE.IcosahedronGeometry(.5,1),new THREE.MeshBasicMaterial({wireframe:true,transparent:true,opacity:.55}));g.add(inner);
+var sats=[0,1,2,3].map(function(){var m=new THREE.Mesh(new THREE.SphereGeometry(1,16,16),new THREE.MeshBasicMaterial({transparent:true,opacity:.9}));g.add(m);return m});
+function size(){var w=innerWidth,h=innerHeight;R.setPixelRatio(Math.min(devicePixelRatio,2));R.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+size();addEventListener('resize',size);
+var secs=[].slice.call(document.querySelectorAll('section[data-x]')),tx=1.35,ts=1,mx=0,my=0,scY=0;
+function pick(){var mid=innerHeight/2,best=1e9;scY=scrollY;secs.forEach(function(s){var b=s.getBoundingClientRect(),d=Math.abs((b.top+b.bottom)/2-mid);if(d<best){best=d;tx=+s.dataset.x;ts=+s.dataset.s}})}
+addEventListener('scroll',pick,{passive:true});pick();
+addEventListener('pointermove',function(e){mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',colors);
+var t=0,last=performance.now();
+function frame(now){
+ var dt=Math.min(.05,(now-last)/1000);last=now;t+=reduce?0:dt;
+ risk+=(target-risk)*.06;
+ var amp=.05+risk*.3,hz=1+risk*1.3,ph=(t*hz)%1,beat=Math.exp(-ph*7)*.12+Math.exp(-Math.abs(ph-.25)*30)*.06,sp=1+risk*2;
+ for(var i=0;i<N;i++){var x=base[i*3],y=base[i*3+1],z=base[i*3+2];
+  var k=1+amp*Math.sin(x*3.2+t*sp)*Math.sin(y*3.2-t*sp*.8)*Math.sin(z*3.2+t*sp*.6)+beat;
+  pos[i*3]=x*k;pos[i*3+1]=y*k;pos[i*3+2]=z*k}
+ geo.attributes.position.needsUpdate=true;
+ var col=risk<.5?C.ok.clone().lerp(C.mid,risk/.5):C.mid.clone().lerp(C.hi,(risk-.5)/.5);
+ mat.color.copy(col);inner.material.color.copy(col);
+ sats.forEach(function(m,j){var a=t*(.4+norm[j]*1.2)+j*1.57,rd=1.55+norm[j]*.6;m.position.set(Math.cos(a)*rd,Math.sin(a*.7+j)*.6,Math.sin(a)*rd);m.scale.setScalar(.04+norm[j]*.07);m.material.color.copy(col)});
+ mat.size=.026+vel*.0006;inner.scale.setScalar(1+beat*2);
+ var wide=innerWidth>860,aspect=cam.aspect,X=wide?tx*Math.min(1,aspect/1.6):0,Y=wide?0:.9;
+ g.position.x+=(X-g.position.x)*.05;g.position.y+=(Y-g.position.y)*.05;
+ var S=(wide?ts:ts*.7);g.scale.setScalar(g.scale.x+(S-g.scale.x)*.05);
+ g.rotation.y=t*.15+scY*.0012+mx*.6;g.rotation.x=my*.4+Math.sin(scY*.002)*.3;inner.rotation.y=-t*.4;
+ R.render(sc,cam);requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+/* extras: glow, progress, scroll velocity */
+var gl=$('#glow'),px=innerWidth/2,py=innerHeight/2,gx=px,gy=py,pr=$('#prog'),ly=scrollY;
+addEventListener('pointermove',function(e){px=e.clientX;py=e.clientY});
+addEventListener('scroll',function(){var m=document.documentElement.scrollHeight-innerHeight;pr.style.transform='scaleX('+(m>0?scrollY/m:0)+')';vel=Math.min(60,Math.abs(scrollY-ly));ly=scrollY},{passive:true});
+(function loop(){gx+=(px-gx)*.12;gy+=(py-gy)*.12;gl.style.transform='translate('+(gx-250)+'px,'+(gy-250)+'px)';vel*=.9;requestAnimationFrame(loop)})();
+/* magnetic button */
+var cta=$('.cta');
+cta.addEventListener('pointermove',function(e){var b=cta.getBoundingClientRect();cta.style.transform='translate('+(e.clientX-b.left-b.width/2)*.25+'px,'+(e.clientY-b.top-b.height/2)*.4+'px)'});
+cta.addEventListener('pointerleave',function(){cta.style.transform=''});
+/* 3D tilt on stage cards */
+document.querySelectorAll('.st').forEach(function(s){
+ s.addEventListener('pointermove',function(e){var b=s.getBoundingClientRect(),x=(e.clientX-b.left)/b.width-.5,y=(e.clientY-b.top)/b.height-.5;s.style.transform='perspective(700px) rotateY('+x*12+'deg) rotateX('+-y*12+'deg)'});
+ s.addEventListener('pointerleave',function(){s.style.transform=''})});
+/* text scramble + counters on reveal */
+var CH='ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
+function scr(h){var w=document.createTreeWalker(h,NodeFilter.SHOW_TEXT),ns=[],n;while(n=w.nextNode())ns.push([n,n.nodeValue]);var s=performance.now();
+ (function s2(now){var p=Math.min(1,(now-s)/900);ns.forEach(function(x){var o=x[1],L=o.length;x[0].nodeValue=o.split('').map(function(c,i){return c===' '||c==='\n'||i<p*L?c:CH[Math.random()*CH.length|0]}).join('')});if(p<1)requestAnimationFrame(s2)})(s)}
+function cnt(el){var n=+el.dataset.n,s=performance.now();(function f(now){var p=Math.min(1,(now-s)/1200);el.textContent=Math.round(n*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(s)}
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){io.unobserve(e.target);if(!reduce)(e.target.dataset.n?cnt:scr)(e.target)}})},{threshold:.5});
+document.querySelectorAll('section h2,[data-n]').forEach(function(e){io.observe(e)});
+})();
+</script>
+</body>
+</html>
